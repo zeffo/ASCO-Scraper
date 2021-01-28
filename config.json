@@ -1,5 +1,5 @@
 {
     "output": "data.csv",
-    "wait": 2,
-    "error_logs": "logs.txt"
+    "error_logs": "logs.txt",
+    "browser": "firefox"
 }

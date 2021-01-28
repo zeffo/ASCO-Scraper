@@ -4,10 +4,15 @@ from bs4 import BeautifulSoup as bsoup
 from selenium import webdriver
 import csv
 import datefinder
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
+with open('config.json') as f:
+        config = json.load(f)
+
+drivers = {'firefox': webdriver.Firefox, 'chrome': webdriver.Chrome, 'google': webdriver.Chrome, 'opera': webdriver.Opera}
+
 results = []
+errors = []
 
 class Data:
     def __init__(self, **kwargs):
@@ -15,17 +20,18 @@ class Data:
             setattr(self, k, v)
 
 def get_metadata(url):
-    driver = webdriver.Firefox()
+    driver = drivers.get(config.get('browser'))()
     driver.get(url)
     title = driver.find_element_by_class_name('node-title')
     status = driver.find_element_by_css_selector('li.field-item.even')
     category = driver.find_element_by_id('page-title')
     try:
         metadata = driver.find_element_by_xpath("//div[@class='field-item even' and @property='content:encoded']//*[contains(translate(text(), 'doi', 'DOI'), 'DOI')]").text
-    except:
+    except Exception as e:
         metadata = '-'
-        print(url)
-    print(metadata, '\n')
+        errors.append(f'{e}\n{url}\n')
+    print(metadata)
+
     results.append(Data(title=title.text, metadata=metadata, status=status, category=category, url=url))
     driver.close()
 
@@ -44,5 +50,8 @@ def articles(url):
 for url in sections():
     for article in articles(url):
         get_metadata(article)
+
+with open(config.get('error_logs'), 'w') as f:
+    f.write('\n'.join(errors))
 
 
